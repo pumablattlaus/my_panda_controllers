@@ -1,2 +1,3 @@
 my_cartesian_velocity_controller:
   type: my_panda_controllers/CartesianVelocityMyController
+  # limit_rate: true ?? so?

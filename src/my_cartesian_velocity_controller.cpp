@@ -28,9 +28,11 @@ bool CartesianVelocityMyController::init(hardware_interface::RobotHW* robot_hard
   // max limits:
   // this->max_velocity = {1700, 1700, 1700, 2500, 2500, 2500};
   // this->max_acceleration = {13000, 13000, 13000, 25000, 25000, 25000};
+  this->max_jerk = {6500, 6500, 6500, 12500, 12500, 12500};
 
-  this->max_velocity = {1000, 1000, 1000, 1000, 1000, 1000};
-  this->max_acceleration = {5000, 5000, 5000, 5000, 5000, 5000};
+  this->max_velocity = {1, 1, 1, 1, 1, 1};
+  this->max_acceleration = {5, 5, 5, 5, 5, 5};
+  
   
   
   std::string arm_id;
@@ -74,16 +76,30 @@ void CartesianVelocityMyController::starting(const ros::Time& /* time */) {
 void CartesianVelocityMyController::update(const ros::Time& /* time */,
                                                 const ros::Duration& period) {
   
+  // TODO: begrenzung ueber robot.control moeglich? 
+  // aendern: parameters limit_rate=0, cutoff_frequency=100, internal_controller=joint_impedance?
    for (size_t i = 0; i < 6; i++)
   {
-    if(abs(this->goal_velocities[i]-this->cart_velocities[i])/period.toSec() > this->max_acceleration[i]) {
-      this->cart_velocities[i] += this->max_acceleration[i]*period.toSec();
-      ROS_INFO("limited acceleration");
-     }
-     else{
-       this->cart_velocities[i]=this->goal_velocities[i];
-     }
+    double acc = abs(this->goal_velocities[i]-this->cart_velocities[i])/period.toSec(); 
+    // Acceleration LIMITING:
+    if(acc > this->max_acceleration[i]) {
+      this->goal_velocities[i] = this->cart_velocities[i] + this->max_acceleration[i]*period.toSec();
+      // ROS_INFO_STREAM("limited acceleration. Velocity" << i << this->cart_velocities[i]);
+      // ROS_INFO_STREAM("Periode: " << period);
+    }
+  
+    // Jerk LIMITING:
+    acc = abs(this->goal_velocities[i]-this->cart_velocities[i])/period.toSec();
+    jerk = abs(acc - last_acc[i])/period.toSec();
+    if(jerk > this->max_jerk[i]) {
+      this->goal_velocities[i] = this->cart_velocities[i] + this->max_jerk[i]*period.toSec()*period.toSec();
+    }
+
+    this->last_acc[i] = acc;
+    this->cart_velocities[i]=this->goal_velocities[i];
   }
+  // ROS_INFO("setting cart_velocities");
+  
   velocity_cartesian_handle_->setCommand(this->cart_velocities);
 }
 
@@ -98,6 +114,7 @@ void CartesianVelocityMyController::velocity_callback(stud_hee::MyVelocity carte
         ROS_INFO("limited velocity");
         }
     }
+    ROS_INFO("changed goal_velocities");
     
     // velocity_cartesian_handle_->setCommand(this->cart_velocities);
 }

@@ -34,6 +34,8 @@ class CartesianVelocityMyController : public controller_interface::MultiInterfac
   std::array<double, 6> goal_velocities;
   std::array<double, 6> max_acceleration;
   std::array<double, 6> max_velocity;
+  std::array<double, 6> max_jerk;
+  std::array<double, 6> last_acc;
 
 
   ros::Subscriber sub_vel;
