@@ -25,6 +25,14 @@ std::array<T,N> convert( const boost::array<T, N> & v )
 
 bool CartesianVelocityMyController::init(hardware_interface::RobotHW* robot_hardware,
                                               ros::NodeHandle& node_handle) {
+  // max limits:
+  // this->max_velocity = {1700, 1700, 1700, 2500, 2500, 2500};
+  // this->max_acceleration = {13000, 13000, 13000, 25000, 25000, 25000};
+
+  this->max_velocity = {1000, 1000, 1000, 1000, 1000, 1000};
+  this->max_acceleration = {5000, 5000, 5000, 5000, 5000, 5000};
+  
+  
   std::string arm_id;
   if (!node_handle.getParam("arm_id", arm_id)) {
     ROS_ERROR("CartesianVelocityMyController: Could not get parameter arm_id");
@@ -66,14 +74,32 @@ void CartesianVelocityMyController::starting(const ros::Time& /* time */) {
 void CartesianVelocityMyController::update(const ros::Time& /* time */,
                                                 const ros::Duration& period) {
   
+   for (size_t i = 0; i < 6; i++)
+  {
+    if(abs(this->goal_velocities[i]-this->cart_velocities[i])/period.toSec() > this->max_acceleration[i]) {
+      this->cart_velocities[i] += this->max_acceleration[i]*period.toSec();
+      ROS_INFO("limited acceleration");
+     }
+     else{
+       this->cart_velocities[i]=this->goal_velocities[i];
+     }
+  }
   velocity_cartesian_handle_->setCommand(this->cart_velocities);
 }
 
 void CartesianVelocityMyController::velocity_callback(stud_hee::MyVelocity cartesian_velocities)
 {
     
-    this->cart_velocities = convert(cartesian_velocities.vel); 
-    velocity_cartesian_handle_->setCommand(this->cart_velocities);
+    this->goal_velocities = convert(cartesian_velocities.vel);
+    for (size_t i = 0; i < 6; i++)
+    {
+      if(this->goal_velocities[i] > this->max_velocity[i]){
+        this->goal_velocities[i] = this->max_velocity[i]; 
+        ROS_INFO("limited velocity");
+        }
+    }
+    
+    // velocity_cartesian_handle_->setCommand(this->cart_velocities);
 }
 
 void CartesianVelocityMyController::stopping(const ros::Time& /*time*/) {

@@ -31,6 +31,10 @@ class CartesianVelocityMyController : public controller_interface::MultiInterfac
   std::unique_ptr<franka_hw::FrankaCartesianVelocityHandle> velocity_cartesian_handle_;
   ros::Duration elapsed_time_;
   std::array<double, 6> cart_velocities;
+  std::array<double, 6> goal_velocities;
+  std::array<double, 6> max_acceleration;
+  std::array<double, 6> max_velocity;
+
 
   ros::Subscriber sub_vel;
   
