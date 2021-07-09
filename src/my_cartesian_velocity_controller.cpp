@@ -14,6 +14,23 @@
 
 namespace my_panda_controllers {
 
+std::string convToStr(std::array<double, 6> arr)
+{
+  std::string out;
+  for (double i: arr) {
+      out + std::to_string(i);
+      // ROS_INFO(out);
+  }
+
+  // ROS_INFO("converted: ");
+  // ROS_INFO(out);
+  return out;
+}
+
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 template<class T,size_t N>
 std::array<T,N> convert( const boost::array<T, N> & v )
 {
@@ -75,48 +92,53 @@ void CartesianVelocityMyController::starting(const ros::Time& /* time */) {
 
 void CartesianVelocityMyController::update(const ros::Time& /* time */,
                                                 const ros::Duration& period) {
-  
-  // TODO: begrenzung ueber robot.control moeglich? 
-  // aendern: parameters limit_rate=0, cutoff_frequency=100, internal_controller=joint_impedance?
+  // catkin build my_panda_controllers --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+  // TODO: begrenzung ueber robot.control moeglich?: hat nichts gebracht
    for (size_t i = 0; i < 6; i++)
   {
-    double acc = abs(this->goal_velocities[i]-this->cart_velocities[i])/period.toSec(); 
+    double acc = (this->velocity_goal[i]-this->velocity_old[i])/period.toSec(); 
     // Acceleration LIMITING:
-    if(acc > this->max_acceleration[i]) {
-      this->goal_velocities[i] = this->cart_velocities[i] + this->max_acceleration[i]*period.toSec();
-      // ROS_INFO_STREAM("limited acceleration. Velocity" << i << this->cart_velocities[i]);
+    if(abs(acc) > this->max_acceleration[i]) {
+      this->velocity_out[i] = this->velocity_old[i] + this->max_acceleration[i]*period.toSec()*sgn(acc);
+      ROS_INFO_STREAM_THROTTLE(1, "limited acceleration. Velocity" << i << this->velocity_out[i]);
       // ROS_INFO_STREAM("Periode: " << period);
     }
+    else {this->velocity_out[i] = this->velocity_goal[i];}
   
     // Jerk LIMITING:
-    acc = abs(this->goal_velocities[i]-this->cart_velocities[i])/period.toSec();
-    jerk = abs(acc - last_acc[i])/period.toSec();
+    acc = (this->velocity_out[i]-this->velocity_old[i])/period.toSec();
+    double jerk = abs(acc - last_acc[i])/period.toSec();
     if(jerk > this->max_jerk[i]) {
-      this->goal_velocities[i] = this->cart_velocities[i] + this->max_jerk[i]*period.toSec()*period.toSec();
+      this->velocity_out[i] = this->velocity_old[i] + this->max_jerk[i]*period.toSec()*period.toSec()*sgn(acc);
+      ROS_INFO_STREAM_THROTTLE(1, "limited jerk. Velocity" << i << this->velocity_out[i]);
     }
 
     this->last_acc[i] = acc;
-    this->cart_velocities[i]=this->goal_velocities[i];
+    this->velocity_old[i]=this->velocity_out[i];
   }
-  // ROS_INFO("setting cart_velocities");
+  // ROS_INFO_STREAM("setting velocity_out");
+  // ROS_INFO_STREAM("velocity 0: " << this->velocity_out[0]);
   
-  velocity_cartesian_handle_->setCommand(this->cart_velocities);
+  velocity_cartesian_handle_->setCommand(this->velocity_out);
+  
 }
 
 void CartesianVelocityMyController::velocity_callback(stud_hee::MyVelocity cartesian_velocities)
 {
     
-    this->goal_velocities = convert(cartesian_velocities.vel);
+    this->velocity_goal = convert(cartesian_velocities.vel);
     for (size_t i = 0; i < 6; i++)
     {
-      if(this->goal_velocities[i] > this->max_velocity[i]){
-        this->goal_velocities[i] = this->max_velocity[i]; 
+      if(this->velocity_goal[i] > this->max_velocity[i]){
+        this->velocity_goal[i] = this->max_velocity[i]; 
         ROS_INFO("limited velocity");
         }
     }
-    ROS_INFO("changed goal_velocities");
+    ROS_INFO("changed velocity_goal");
+    ROS_INFO_STREAM("State: " << velocity_cartesian_handle_->getRobotState());
     
-    // velocity_cartesian_handle_->setCommand(this->cart_velocities);
+    // velocity_cartesian_handle_->setCommand(this->velocity_old);
 }
 
 void CartesianVelocityMyController::stopping(const ros::Time& /*time*/) {
