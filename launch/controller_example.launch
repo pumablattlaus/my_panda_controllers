@@ -1,0 +1,18 @@
+<launch>
+    <include file="$(find panda_hardware_helper)/launch/panda.launch" />
+    
+    <rosparam command="load" file="$(find my_panda_controllers)/config/my_panda_controllers_configuration.yaml" subst_value="true"/>
+
+
+    <node name="controller_spawner" pkg="controller_manager" type="unspawner" respawn="false" output="screen" args="position_joint_trajectory_controller"/>
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="my_cartesian_velocity_controller"/>
+
+
+    <!-- rostopic pub /my_cartesian_velocity_controller/my_velocities my_panda_controllers/MyVelocity "header:
+  seq: 0
+  stamp: {secs: 0, nsecs: 0}
+  frame_id: ''
+vel: [0.00, 0.0, 0.0, 0.0, 0.0, 0.0]" -->
+
+</launch>
+
