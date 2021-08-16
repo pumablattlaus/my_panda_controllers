@@ -122,4 +122,4 @@ fixed_joint_impedance_controller:
       
 my_cartesian_velocity_controller:
   type: my_panda_controllers/CartesianVelocityMyController
-  arm_id: panda
+  # arm_id: panda
