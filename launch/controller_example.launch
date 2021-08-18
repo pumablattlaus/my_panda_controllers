@@ -3,7 +3,7 @@
     <arg name="node_start_delay" default="1.0"/>
 
 
-    <include file="$(find panda_hardware_helper)/launch/panda.launch"
+    <include file="$(find panda_hardware_helper)/launch/panda.launch">
       <arg name="load_gripper" value="$(arg load_gripper)" />
     </include>
     
