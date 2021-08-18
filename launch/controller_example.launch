@@ -10,8 +10,8 @@
     <rosparam command="load" file="$(find my_panda_controllers)/config/my_panda_controllers_configuration.yaml" subst_value="true"/>
 
 
-    <node name="controller_unspawner" pkg="controller_manager" type="unspawner" respawn="false" output="screen" args="position_joint_trajectory_controller" />
-    <node name="cart_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="my_cartesian_velocity_controller" launch_prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " />
+    <node name="controller_unspawner" pkg="controller_manager" type="unspawner" respawn="false" output="screen" args="position_joint_trajectory_controller" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " />
+    <node name="cart_controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="my_cartesian_velocity_controller" launch-prefix="bash -c 'sleep 3; $0 $@' " />
 
 
     <!-- rostopic pub /my_cartesian_velocity_controller/my_velocities my_panda_controllers/MyVelocity "header:
