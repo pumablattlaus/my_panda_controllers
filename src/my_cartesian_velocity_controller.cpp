@@ -124,7 +124,7 @@ void CartesianVelocityMyController::update(const ros::Time& /* time */,
   
 }
 
-void CartesianVelocityMyController::velocity_callback(stud_hee::MyVelocity cartesian_velocities)
+void CartesianVelocityMyController::velocity_callback(my_panda_controllers::MyVelocity cartesian_velocities)
 {
     
     this->velocity_goal = convert(cartesian_velocities.vel);
